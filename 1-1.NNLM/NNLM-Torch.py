@@ -20,7 +20,7 @@ word_list = list(set(word_list)) #先让list变成set，然后再变回去，去
 word_dict = {w: i for i, w in enumerate(word_list)} # {'dog': 0, 'milk': 1, 'i': 2, 'like': 3, 'hate': 4, 'love': 5, 'coffee': 6}
 number_dict = {i: w for i, w in enumerate(word_list)} # {0: 'dog', 1: 'milk', 2: 'i', 3: 'like', 4: 'hate', 5: 'love', 6: 'coffee'}
 
-n_class = len(word_dict) # number of Vocabulary
+n_class = len(word_dict) # number of Vocabulary  7
 
 # NNLM Parameter
 n_step = 2 # n-1 in paper 根据前两个单词预测第三个单词
@@ -50,18 +50,20 @@ class NNLM(nn.Module): # 定义NNLM网络，继承nn.Module
         # 以下是设置神经网络中的各项参数
         # 一个嵌入字典，第一个参数是嵌入字典的大小，第二个参数是每个嵌入向量的大小
         # C词向量C(w)存在于矩阵C(|V|*m)中，矩阵C的行数表示词汇表的大小；列数表示词向量C(w)的维度。矩阵C的某一行对应一个单词的词向量表示
+        # nn.Embedding一个简单的查找表，用于存储固定字典和大小的嵌入。
+        # 块通常用于存储单词嵌入并使用索引检索它们。 模块的输入是索引列表，输出是相应的字嵌入。
         self.C = nn.Embedding(n_class, m)
         # Parameter类是Variable的子类，常用于模块参数，作为属性时会被自动加入到参数列表中
         # 隐藏层的权重(h*(n-1)m)
         self.H = nn.Parameter(torch.randn(n_step * m, n_hidden).type(dtype)) # torch.randn正态分布 4*2
         # 输入层到输出层权重(|V|*(n-1)m)
-        self.W = nn.Parameter(torch.randn(n_step * m, n_class).type(dtype)) # 4*5
+        self.W = nn.Parameter(torch.randn(n_step * m, n_class).type(dtype)) # 4*7
         # 隐藏层偏置bias(h)
         self.d = nn.Parameter(torch.randn(n_hidden).type(dtype)) # 2
         # 隐藏层到输出层的权重(|V|*h)
-        self.U = nn.Parameter(torch.randn(n_hidden, n_class).type(dtype)) # 2*5
+        self.U = nn.Parameter(torch.randn(n_hidden, n_class).type(dtype)) # 2*7
         # 输出层的偏置bias(|V|)
-        self.b = nn.Parameter(torch.randn(n_class).type(dtype)) #5
+        self.b = nn.Parameter(torch.randn(n_class).type(dtype)) #7
 
     # 前向传播
     def forward(self, X):
@@ -69,8 +71,8 @@ class NNLM(nn.Module): # 定义NNLM网络，继承nn.Module
         X = X.view(-1, n_step * m) # [batch_size, n_step * n_class]  转换成 -1*4
         tanh = torch.tanh(self.d + torch.mm(X, self.H)) # [batch_size, n_hidden] torch.mm:Performs a matrix multiplication of the matrices input and mat2.
         output = self.b + torch.mm(X, self.W) + torch.mm(tanh, self.U) # [batch_size, n_class]
-        #          5             -1*4, 4*5               -1*2, 2*5
-        return output
+        #          7             -1*4, 4*7               -1*2, 2*7
+        return output # -1*7
 
 model = NNLM() # 初始化模型
 
@@ -81,6 +83,7 @@ optimizer = optim.Adam(model.parameters(), lr=0.001)
 
 # 以下三行将输入进行torch包装，用Variable可以实现自动求导
 input_batch, target_batch = make_batch(sentences)
+#tensor([[1, 3],[1, 2],[1, 0]])   tensor([5, 4, 6])
 input_batch = Variable(torch.LongTensor(input_batch))
 target_batch = Variable(torch.LongTensor(target_batch))
 
@@ -100,7 +103,9 @@ for epoch in range(5000):
 
 # Predict 预测值
 predict = model(input_batch).data.max(1, keepdim=True)[1]
-
+#tensor([[5],
+#        [4],
+#        [6]])
 # Test 测试
 print([sen.split()[:2] for sen in sentences], '->', [number_dict[n.item()] for n in predict.squeeze()])
 #
