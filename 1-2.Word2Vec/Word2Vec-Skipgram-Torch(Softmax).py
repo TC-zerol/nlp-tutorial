@@ -71,7 +71,7 @@ class Word2Vec(nn.Module):
 
 model = Word2Vec() # 初始化模型
 
-criterion = nn.CrossEntropyLoss() # 定义损失函数
+criterion = nn.CrossEntropyLoss() # 定义损失函数 nn.CrossEntropyLoss()是nn.logSoftmax()和nn.NLLLoss()的整合
 optimizer = optim.Adam(model.parameters(), lr=0.001) # 定义优化函数
 
 # Training
@@ -96,7 +96,7 @@ for epoch in range(5000):
 
 W, WT = model.parameters() # 返回模块参数的迭代器。 这通常被传递给优化器。
 # Parameter containing:
-# tensor([[-1.0329,  0.2841],
+# tensor([[-1.0329,  0.2841],    该隐层每一行代表每个单词的词向量
 #         [ 0.6558, -1.4412],
 #         [ 1.0912,  0.0807],
 #         [ 0.1451, -2.4376],
