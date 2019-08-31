@@ -35,11 +35,13 @@ n_layers = 6  # number of Encoder of Decoder Layer
 n_heads = 8  # number of heads in Multi-Head Attention
 
 def make_batch(sentences):
-    input_batch = [[src_vocab[n] for n in sentences[0].split()]]
+    input_batch = [[src_vocab[n] for n in sentences[0].split()]] # [[1, 2, 3, 4, 0]]
     output_batch = [[tgt_vocab[n] for n in sentences[1].split()]]
     target_batch = [[tgt_vocab[n] for n in sentences[2].split()]]
     return Variable(torch.LongTensor(input_batch)), Variable(torch.LongTensor(output_batch)), Variable(torch.LongTensor(target_batch))
 
+# 首先论文中说到因为没有用到RNN也没有用到CNN提取特征，所以句子中没有很好的应用位置信息。
+# 所以需要在input embedding后加上Positional Encoding 。所以论文中提出了一种Positional Encoding的实现方式
 def get_sinusoid_encoding_table(n_position, d_model):
     def cal_angle(position, hid_idx):
         return position / np.power(10000, 2 * (hid_idx // 2) / d_model)
@@ -47,9 +49,9 @@ def get_sinusoid_encoding_table(n_position, d_model):
         return [cal_angle(position, hid_j) for hid_j in range(d_model)]
 
     sinusoid_table = np.array([get_posi_angle_vec(pos_i) for pos_i in range(n_position)])
-    sinusoid_table[:, 0::2] = np.sin(sinusoid_table[:, 0::2])  # dim 2i
-    sinusoid_table[:, 1::2] = np.cos(sinusoid_table[:, 1::2])  # dim 2i+1
-    return torch.FloatTensor(sinusoid_table)
+    sinusoid_table[:, 0::2] = np.sin(sinusoid_table[:, 0::2])  # dim 2i 偶数正弦
+    sinusoid_table[:, 1::2] = np.cos(sinusoid_table[:, 1::2])  # dim 2i+1 奇数余弦
+    return torch.FloatTensor(sinusoid_table) # 得到每一个词的位置向量
 
 def get_attn_pad_mask(seq_q, seq_k):
     batch_size, len_q = seq_q.size()

@@ -4,7 +4,7 @@
               https://github.com/JayParks/transformer, https://github.com/dhlee347/pytorchic-bert
 '''
 import math
-import re
+import re #  Python 的 re 模块（Regular Expression 正则表达式）提供各种正则表达式的匹配操作
 from random import *
 import numpy as np
 import torch
@@ -32,8 +32,8 @@ text = (
     'Thanks you Romeo'
 )
 sentences = re.sub("[.,!?\\-]", '', text.lower()).split('\n') # filter '.', ',', '?', '!'
-word_list = list(set(" ".join(sentences).split()))
-word_dict = {'[PAD]' : 0, '[CLS]' : 1, '[SEP]' : 2, '[MASK]' : 3}
+word_list = list(set(" ".join(sentences).split())) # join() 方法用于将序列中的元素以指定的字符连接生成一个新的字符串。此处指定为空格
+word_dict = {'[PAD]' : 0, '[CLS]' : 1, '[SEP]' : 2, '[MASK]' : 3} #
 for i, w in enumerate(word_list):
     word_dict[w] = i + 4
 number_dict = {i: w for i, w in enumerate(word_dict)}
@@ -48,17 +48,17 @@ for sentence in sentences:
 def make_batch():
     batch = []
     positive = negative = 0
-    while positive != batch_size/2 or negative != batch_size/2:
-        tokens_a_index, tokens_b_index= randrange(len(sentences)), randrange(len(sentences)) # sample random index in sentences
+    while positive != batch_size/2 or negative != batch_size/2: # 添加连续句子，或者非连续句子至batch_size/2
+        tokens_a_index, tokens_b_index= randrange(len(sentences)), randrange(len(sentences)) # sample random index in sentences 随机先选择一个句子
         tokens_a, tokens_b= token_list[tokens_a_index], token_list[tokens_b_index]
         input_ids = [word_dict['[CLS]']] + tokens_a + [word_dict['[SEP]']] + tokens_b + [word_dict['[SEP]']]
-        segment_ids = [0] * (1 + len(tokens_a) + 1) + [1] * (len(tokens_b) + 1)
+        segment_ids = [0] * (1 + len(tokens_a) + 1) + [1] * (len(tokens_b) + 1) # 将第一个句子标记为0，第二个句子标记为1
 
         # MASK LM
         n_pred =  min(max_pred, max(1, int(round(len(input_ids) * 0.15)))) # 15 % of tokens in one sentence
         cand_maked_pos = [i for i, token in enumerate(input_ids)
                           if token != word_dict['[CLS]'] and token != word_dict['[SEP]']]
-        shuffle(cand_maked_pos)
+        shuffle(cand_maked_pos) # shuffle() 方法将序列的所有元素随机排序。
         masked_tokens, masked_pos = [], []
         for pos in cand_maked_pos[:n_pred]:
             masked_pos.append(pos)
@@ -67,20 +67,20 @@ def make_batch():
                 input_ids[pos] = word_dict['[MASK]'] # make mask
             elif random() < 0.5:  # 10%
                 index = randint(0, vocab_size - 1) # random index in vocabulary
-                input_ids[pos] = word_dict[number_dict[index]] # replace
+                input_ids[pos] = word_dict[number_dict[index]] # replace 在词库中随机替换一个词
 
         # Zero Paddings
-        n_pad = maxlen - len(input_ids)
+        n_pad = maxlen - len(input_ids) # 30 - 输入的2个句子加标记的长度
         input_ids.extend([0] * n_pad)
         segment_ids.extend([0] * n_pad)
 
         # Zero Padding (100% - 15%) tokens
         if max_pred > n_pred:
             n_pad = max_pred - n_pred
-            masked_tokens.extend([0] * n_pad)
-            masked_pos.extend([0] * n_pad)
+            masked_tokens.extend([0] * n_pad) # 选择句子中当前位置的单词的编号，填充0至max_pred
+            masked_pos.extend([0] * n_pad) # 选择句子中当前位置，填充0至max_pred
 
-        if tokens_a_index + 1 == tokens_b_index and positive < batch_size/2:
+        if tokens_a_index + 1 == tokens_b_index and positive < batch_size/2: # 如果b句子是a句子的下一句，或者positive < batch_size/2
             batch.append([input_ids, segment_ids, masked_tokens, masked_pos, True]) # IsNext
             positive += 1
         elif tokens_a_index + 1 != tokens_b_index and negative < batch_size/2:
