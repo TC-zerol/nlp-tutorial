@@ -7,7 +7,7 @@ from torch.autograd import Variable #提供实现任意标量值函数的自动�
 
 dtype = torch.FloatTensor # 创建一个浮点类型的CPUtensor，Torch.Tensor是一个包含单一数据类型元素的多维矩阵
 
-sentences = [ "i like dog", "i love coffee", "i hate milk"] # 初始化三个句子。
+sentences = [ "i like dog", "i love coffee", "i hate milk"] # 初始化三个句子
 
 word_list = " ".join(sentences).split() # split() 方法用于把一个字符串分割成字符串数组。
 # join() 方法用于将序列中的元素以指定的字符连接生成一个新的字符串。
