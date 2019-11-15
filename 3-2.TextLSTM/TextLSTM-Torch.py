@@ -42,16 +42,18 @@ class TextLSTM(nn.Module):
     def forward(self, X):
         #torch.transpose(input, dim0, dim1) dim0 (int) – the first dimension to be transposed, dim1 (int) – the second dimension to be transposed
         input = X.transpose(0, 1)  # X : [n_step, batch_size, n_class]
+        #hidden_state = Variable(torch.zeros(1, len(X), n_hidden))   # [num_layers(=1) * num_directions(=1), batch_size, n_hidden]
+        #cell_state = Variable(torch.zeros(1, len(X), n_hidden))     # [num_layers(=1) * num_directions(=1), batch_size, n_hidden]
 
-        hidden_state = Variable(torch.zeros(1, len(X), n_hidden))   # [num_layers(=1) * num_directions(=1), batch_size, n_hidden]
-        cell_state = Variable(torch.zeros(1, len(X), n_hidden))     # [num_layers(=1) * num_directions(=1), batch_size, n_hidden]
+        outputs, (_, _) = self.lstm(input)
 
-        outputs, (_, _) = self.lstm(input, (hidden_state, cell_state))
         outputs = outputs[-1]  # [batch_size, n_hidden]
+
         model = torch.mm(outputs, self.W) + self.b  # model : [batch_size, n_class]
         return model
 
 input_batch, target_batch = make_batch(seq_data)
+
 
 model = TextLSTM()
 
@@ -63,8 +65,9 @@ output = model(input_batch)
 # Training
 for epoch in range(1000):
     optimizer.zero_grad()
-
+    print(input_batch.size())
     output = model(input_batch)
+
     loss = criterion(output, target_batch)
     if (epoch + 1) % 100 == 0:
         print('Epoch:', '%04d' % (epoch + 1), 'cost =', '{:.6f}'.format(loss))

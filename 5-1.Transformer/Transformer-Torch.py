@@ -3,6 +3,8 @@
   Reference : https://github.com/jadore801120/attention-is-all-you-need-pytorch
               https://github.com/JayParks/transformer
 '''
+
+# 注释参考https://www.jianshu.com/p/b1030350aadb
 import numpy as np
 import torch
 import torch.nn as nn
@@ -53,13 +55,16 @@ def get_sinusoid_encoding_table(n_position, d_model):
     sinusoid_table[:, 1::2] = np.cos(sinusoid_table[:, 1::2])  # dim 2i+1 奇数余弦
     return torch.FloatTensor(sinusoid_table) # 得到每一个词的位置向量
 
+# 对输入序列进行对齐
 def get_attn_pad_mask(seq_q, seq_k):
     batch_size, len_q = seq_q.size()
     batch_size, len_k = seq_k.size()
     # eq(zero) is PAD token
     pad_attn_mask = seq_k.data.eq(0).unsqueeze(1)  # batch_size x 1 x len_k(=len_q), one is masking
+    #  .expand返回tensor的一个新视图，单个维度扩大为更大的尺寸
     return pad_attn_mask.expand(batch_size, len_q, len_k)  # batch_size x len_q x len_k
 
+#使得decoder不能看见未来的信息
 def get_attn_subsequent_mask(seq):
     attn_shape = [seq.size(0), seq.size(1), seq.size(1)]
     subsequent_mask = np.triu(np.ones(attn_shape), k=1)
@@ -135,6 +140,7 @@ class DecoderLayer(nn.Module):
         dec_outputs = self.pos_ffn(dec_outputs)
         return dec_outputs, dec_self_attn, dec_enc_attn
 
+#编码器
 class Encoder(nn.Module):
     def __init__(self):
         super(Encoder, self).__init__()
@@ -143,7 +149,7 @@ class Encoder(nn.Module):
         self.layers = nn.ModuleList([EncoderLayer() for _ in range(n_layers)])
 
     def forward(self, enc_inputs): # enc_inputs : [batch_size x source_len]
-        enc_outputs = self.src_emb(enc_inputs) + self.pos_emb(torch.LongTensor([[1,2,3,4,0]]))
+        enc_outputs = self.src_emb(enc_inputs) + self.pos_emb(torch.LongTensor([[1,2,3,4,0]])) # 词嵌入加上位置信息
         enc_self_attn_mask = get_attn_pad_mask(enc_inputs, enc_inputs)
         enc_self_attns = []
         for layer in self.layers:
@@ -151,6 +157,7 @@ class Encoder(nn.Module):
             enc_self_attns.append(enc_self_attn)
         return enc_outputs, enc_self_attns
 
+# 解码器
 class Decoder(nn.Module):
     def __init__(self):
         super(Decoder, self).__init__()
